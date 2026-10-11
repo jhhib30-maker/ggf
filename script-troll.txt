@@ -1,0 +1,459 @@
+--[[
+    TROLL NHÂN VẬT - WIND UI + ẢNH NỀN CUSTOM
+]]
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Players = game:GetService("Players")
+local SoundService = game:GetService("SoundService")
+local player = Players.LocalPlayer
+
+local state = {
+    randomName=false, jumpSound=false, bigHead=false, onFire=false,
+    footprints=false, autoJump=false, spin360=false, rainbow=false,
+    transparent=false, neonBody=false, forceField=false, sparkles=false,
+    smoke=false, trail=false, ghost=false, tinyBody=false, giantBody=false,
+    speedBoost=false, lowGravity=false, moonWalk=false, dizzy=false,
+    flipLoop=false, musicLoop=false, laughLoop=false, screenShake=false,
+    rainbowScreen=false, followPlayer=false, spinOthers=false,
+    upsideDown=false, noHead=false, fireHands=false, iceBody=false, lightning=false,
+}
+
+local memeSounds = {
+    "rbxassetid://1837879082",
+    "rbxassetid://6042053626",
+    "rbxassetid://91203864334566",
+}
+
+local function playMeme()
+    local s = Instance.new("Sound")
+    s.SoundId = memeSounds[math.random(1,#memeSounds)]
+    s.Volume = 0.5
+    s.PlaybackSpeed = math.random(90,130)/100
+    s.Parent = SoundService
+    s:Play()
+    game:GetService("Debris"):AddItem(s,3)
+end
+
+local char, humanoid, hrp, head
+local originalHeadSize, originalSizes, originalColors = {}, {}
+local lastFootPos, fireObj, trailObj, musicObj, ghostObj
+local sparklesObj, smokeObj, forceFieldObj, lightningObj
+local jumpConn
+
+local function getAllParts(c)
+    local t = {}
+    for _, v in ipairs(c:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
+            table.insert(t, v)
+        end
+    end
+    return t
+end
+
+local function resetAll()
+    if char then
+        for _, p in ipairs(getAllParts(char)) do
+            if originalColors[p] then p.Color = originalColors[p] end
+            if originalSizes[p] then p.Size = originalSizes[p] end
+            p.Transparency = 0
+            p.Material = Enum.Material.Plastic
+        end
+    end
+    if head and originalHeadSize then
+        head.Size = originalHeadSize
+        local mesh = head:FindFirstChildOfClass("SpecialMesh")
+        if mesh then mesh.Scale = Vector3.new(1,1,1) end
+    end
+    for _, obj in ipairs({fireObj, trailObj, sparklesObj, smokeObj, forceFieldObj, lightningObj, ghostObj}) do
+        if obj then obj:Destroy() end
+    end
+    fireObj, trailObj, sparklesObj, smokeObj, forceFieldObj, lightningObj, ghostObj = nil,nil,nil,nil,nil,nil,nil
+    if musicObj then musicObj:Destroy() musicObj = nil end
+    if humanoid then
+        humanoid.WalkSpeed = 16
+        humanoid.JumpPower = 50
+        humanoid.JumpHeight = 7.2
+    end
+    workspace.Gravity = 196.2
+    game.Lighting.Ambient = Color3.fromRGB(0,0,0)
+end
+
+local function onChar(c)
+    char = c
+    humanoid = c:WaitForChild("Humanoid", 10)
+    hrp = c:WaitForChild("HumanoidRootPart", 10)
+    head = c:WaitForChild("Head", 10)
+
+    originalColors = {}
+    originalSizes = {}
+    for _, p in ipairs(getAllParts(c)) do
+        originalColors[p] = p.Color
+        originalSizes[p] = p.Size
+    end
+
+    if head then originalHeadSize = head.Size end
+    lastFootPos = nil
+    resetAll()
+
+    if jumpConn then jumpConn:Disconnect() end
+    if humanoid then
+        jumpConn = humanoid.Jumping:Connect(function()
+            if state.jumpSound then playMeme() end
+        end)
+    end
+end
+
+if player.Character then onChar(player.Character) end
+player.CharacterAdded:Connect(onChar)
+
+-- ===== WINDOW =====
+local Window = WindUI:CreateWindow({
+    Title = "😂 Troll Nhân Vật",
+    Author = "Wind UI Custom BG",
+    Folder = "TrollHub",
+    Icon = "smile",
+    Theme = "Dark",
+    Size = UDim2.fromOffset(520, 380),
+    Transparent = true,
+    Resizable = true,
+    SideBarWidth = 160,
+    HideSearchBar = true,
+    ScrollBarEnabled = true,
+    User = { Enabled = false },
+    Background = "rbxassetid://108973833381448",
+    BackgroundImageTransparency = 0.5,
+})
+
+-- ===== TABS =====
+local TabBasic = Window:Tab({ Title = "Cơ bản", Icon = "star" })
+local TabLook = Window:Tab({ Title = "Ngoại hình", Icon = "eye" })
+local TabMove = Window:Tab({ Title = "Chuyển động", Icon = "move" })
+local TabSound = Window:Tab({ Title = "Âm thanh", Icon = "volume-2" })
+local TabOther = Window:Tab({ Title = "Troll khác", Icon = "users" })
+local TabWeird = Window:Tab({ Title = "Kỳ quái", Icon = "ghost" })
+local TabInfo = Window:Tab({ Title = "Info", Icon = "info" })
+
+local function addToggle(tab, title, key)
+    tab:Toggle({
+        Title = title,
+        Default = false,
+        Callback = function(v) state[key] = v end,
+    })
+end
+
+addToggle(TabBasic, "Đổi tên random", "randomName")
+addToggle(TabBasic, "Âm thanh meme khi nhảy", "jumpSound")
+addToggle(TabBasic, "Đầu to gấp 3", "bigHead")
+addToggle(TabBasic, "Bốc lửa", "onFire")
+addToggle(TabBasic, "Để lại dấu chân", "footprints")
+addToggle(TabBasic, "Tự nhảy liên tục", "autoJump")
+addToggle(TabBasic, "Xoay 360 độ", "spin360")
+addToggle(TabBasic, "Cầu vồng (rainbow)", "rainbow")
+
+addToggle(TabLook, "Trong suốt", "transparent")
+addToggle(TabLook, "Neon body", "neonBody")
+addToggle(TabLook, "Force field", "forceField")
+addToggle(TabLook, "Sparkles (lấp lánh)", "sparkles")
+addToggle(TabLook, "Smoke (khói)", "smoke")
+addToggle(TabLook, "Trail (vệt sáng)", "trail")
+addToggle(TabLook, "Ghost (ma)", "ghost")
+addToggle(TabLook, "Tiny body (nhỏ)", "tinyBody")
+addToggle(TabLook, "Giant body (to)", "giantBody")
+
+addToggle(TabMove, "Speed boost", "speedBoost")
+addToggle(TabMove, "Low gravity", "lowGravity")
+addToggle(TabMove, "Moon walk", "moonWalk")
+addToggle(TabMove, "Dizzy (đầu xoay)", "dizzy")
+addToggle(TabMove, "Flip loop", "flipLoop")
+
+addToggle(TabSound, "Music loop", "musicLoop")
+addToggle(TabSound, "Laugh loop", "laughLoop")
+addToggle(TabSound, "Screen shake", "screenShake")
+addToggle(TabSound, "Rainbow screen", "rainbowScreen")
+
+addToggle(TabOther, "Follow player gần nhất", "followPlayer")
+addToggle(TabOther, "Spin người khác", "spinOthers")
+
+addToggle(TabWeird, "Upside down", "upsideDown")
+addToggle(TabWeird, "No head (mất đầu)", "noHead")
+addToggle(TabWeird, "Fire hands", "fireHands")
+addToggle(TabWeird, "Ice body", "iceBody")
+addToggle(TabWeird, "Lightning", "lightning")
+
+TabInfo:Button({
+    Title = "🔄 Reset tất cả hiệu ứng",
+    Callback = function()
+        for k in pairs(state) do state[k] = false end
+        resetAll()
+        WindUI:Notify({ Title = "Đã reset", Content = "Tất cả hiệu ứng đã tắt", Duration = 3 })
+    end,
+})
+
+TabInfo:Paragraph({
+    Title = "Hướng dẫn",
+    Desc = "Bật toggle để kích hoạt.\nTất cả tự reset khi chết.\nHỗ trợ R15 + R6.",
+})
+
+-- ===== VÒNG LẶP =====
+task.spawn(function()
+    local hue = 0
+    local tick = 0
+    while task.wait(0.1) do
+        tick = tick + 1
+        if not char or not char.Parent then continue end
+        if not humanoid or not hrp then continue end
+
+        if state.randomName then
+            local names = {"Bot","Noob","Admin","Banana","Potato","Chicken","Pro","God","Cat","Dog"}
+            char.Name = names[math.random(1,#names)]
+        end
+
+        if state.bigHead and head and originalHeadSize then
+            head.Size = originalHeadSize * 3
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then mesh.Scale = Vector3.new(3,3,3) end
+        elseif head and originalHeadSize and not state.bigHead then
+            head.Size = originalHeadSize
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then mesh.Scale = Vector3.new(1,1,1) end
+        end
+
+        if state.onFire then
+            if not fireObj or not fireObj.Parent then
+                fireObj = Instance.new("Fire")
+                fireObj.Size = 5
+                fireObj.Heat = 10
+                fireObj.Color = Color3.fromRGB(255,100,0)
+                fireObj.SecondaryColor = Color3.fromRGB(255,200,0)
+                fireObj.Parent = hrp
+            end
+        else
+            if fireObj then fireObj:Destroy() fireObj = nil end
+        end
+
+        if state.footprints and hrp then
+            local pos = hrp.Position
+            if not lastFootPos or (pos-lastFootPos).Magnitude > 3 then
+                lastFootPos = pos
+                local fp = Instance.new("Part")
+                fp.Size = Vector3.new(1,0.2,1.5)
+                fp.Position = pos - Vector3.new(0,2.5,0)
+                fp.Anchored = true
+                fp.CanCollide = false
+                fp.Color = Color3.fromRGB(0,0,0)
+                fp.Material = Enum.Material.Neon
+                fp.Transparency = 0.5
+                fp.Shape = Enum.PartType.Cylinder
+                fp.Parent = workspace
+                game:GetService("Debris"):AddItem(fp, 5)
+            end
+        end
+
+        if state.autoJump and humanoid then humanoid.Jump = true end
+        if state.spin360 and hrp then hrp.CFrame = hrp.CFrame * CFrame.Angles(0,math.rad(15),0) end
+
+        if state.rainbow then
+            hue = (hue + 0.02) % 1
+            local color = Color3.fromHSV(hue,1,1)
+            for _, p in ipairs(getAllParts(char)) do p.Color = color end
+        end
+
+        if state.transparent then
+            for _, p in ipairs(getAllParts(char)) do p.Transparency = 0.5 end
+        end
+
+        if state.neonBody then
+            for _, p in ipairs(getAllParts(char)) do p.Material = Enum.Material.Neon end
+        end
+
+        if state.ghost then
+            if not ghostObj then
+                ghostObj = Instance.new("Highlight")
+                ghostObj.FillColor = Color3.fromRGB(255,255,255)
+                ghostObj.FillTransparency = 0.8
+                ghostObj.OutlineColor = Color3.fromRGB(200,200,255)
+                ghostObj.Parent = char
+            end
+        else
+            if ghostObj then ghostObj:Destroy() ghostObj = nil end
+        end
+
+        if state.tinyBody then
+            for _, p in ipairs(getAllParts(char)) do
+                if originalSizes[p] then p.Size = originalSizes[p] * 0.5 end
+            end
+        elseif state.giantBody then
+            for _, p in ipairs(getAllParts(char)) do
+                if originalSizes[p] then p.Size = originalSizes[p] * 2 end
+            end
+        elseif not state.bigHead then
+            for _, p in ipairs(getAllParts(char)) do
+                if originalSizes[p] and p ~= head then p.Size = originalSizes[p] end
+            end
+        end
+
+        if state.speedBoost then humanoid.WalkSpeed = 50
+        elseif not state.moonWalk and humanoid.WalkSpeed > 16 then humanoid.WalkSpeed = 16 end
+
+        if state.lowGravity then
+            workspace.Gravity = 50
+        elseif not state.lowGravity and workspace.Gravity < 196 then
+            workspace.Gravity = 196.2
+        end
+
+        if state.moonWalk then humanoid.WalkSpeed = -16
+        elseif not state.speedBoost and humanoid.WalkSpeed < 0 then humanoid.WalkSpeed = 16 end
+
+        if state.dizzy and head then head.CFrame = head.CFrame * CFrame.Angles(0,math.rad(20),0) end
+        if state.flipLoop and hrp then hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(10),0,0) end
+        if state.upsideDown and hrp then hrp.CFrame = hrp.CFrame * CFrame.Angles(math.rad(180),0,0) end
+
+        if state.noHead and head then
+            head.Transparency = 1
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then mesh.Scale = Vector3.new(0.01,0.01,0.01) end
+        elseif head and not state.bigHead then
+            head.Transparency = 0
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then mesh.Scale = Vector3.new(1,1,1) end
+        end
+
+        if state.fireHands then
+            for _, p in ipairs(getAllParts(char)) do
+                if p.Name:find("Hand") or p.Name:find("Arm") then
+                    if not p:FindFirstChild("FireHand") then
+                        local f = Instance.new("Fire")
+                        f.Name = "FireHand"
+                        f.Size = 2
+                        f.Parent = p
+                    end
+                end
+            end
+        else
+            for _, p in ipairs(getAllParts(char)) do
+                local f = p:FindFirstChild("FireHand")
+                if f then f:Destroy() end
+            end
+        end
+
+        if state.iceBody then
+            for _, p in ipairs(getAllParts(char)) do
+                p.Material = Enum.Material.Ice
+                p.Color = Color3.fromRGB(150,200,255)
+            end
+        end
+
+        if state.lightning then
+            if not lightningObj or not lightningObj.Parent then
+                lightningObj = Instance.new("SelectionBox")
+                lightningObj.Adornee = char
+                lightningObj.LineThickness = 0.5
+                lightningObj.Transparency = 0.5
+                lightningObj.Parent = char
+            end
+            lightningObj.Color3 = Color3.fromHSV(math.random(),1,1)
+        else
+            if lightningObj then lightningObj:Destroy() lightningObj = nil end
+        end
+
+        if state.forceField then
+            if not forceFieldObj or not forceFieldObj.Parent then
+                forceFieldObj = Instance.new("ForceField")
+                forceFieldObj.Visible = true
+                forceFieldObj.Parent = char
+            end
+        else
+            if forceFieldObj then forceFieldObj:Destroy() forceFieldObj = nil end
+        end
+
+        if state.sparkles then
+            if not sparklesObj or not sparklesObj.Parent then
+                sparklesObj = Instance.new("Sparkles")
+                sparklesObj.Parent = hrp
+            end
+            sparklesObj.SparkleColor = Color3.fromHSV(math.random(),1,1)
+        else
+            if sparklesObj then sparklesObj:Destroy() sparklesObj = nil end
+        end
+
+        if state.smoke then
+            if not smokeObj or not smokeObj.Parent then
+                smokeObj = Instance.new("Smoke")
+                smokeObj.Size = 5
+                smokeObj.RiseVelocity = 5
+                smokeObj.Color = Color3.fromRGB(100,100,100)
+                smokeObj.Parent = hrp
+            end
+        else
+            if smokeObj then smokeObj:Destroy() smokeObj = nil end
+        end
+
+        if state.trail then
+            if not trailObj then
+                local a0 = Instance.new("Attachment", hrp)
+                local a1 = Instance.new("Attachment", hrp)
+                a0.Position = Vector3.new(0,1,0)
+                a1.Position = Vector3.new(0,-1,0)
+                trailObj = Instance.new("Trail")
+                trailObj.Attachment0 = a0
+                trailObj.Attachment1 = a1
+                trailObj.Lifetime = 1
+                trailObj.Parent = hrp
+            end
+            trailObj.Color = ColorSequence.new(Color3.fromHSV(math.random(),1,1))
+        else
+            if trailObj then trailObj:Destroy() trailObj = nil end
+        end
+
+        if state.musicLoop then
+            if not musicObj or not musicObj.Parent then
+                musicObj = Instance.new("Sound")
+                musicObj.SoundId = memeSounds[math.random(1,#memeSounds)]
+                musicObj.Volume = 0.3
+                musicObj.Looped = true
+                musicObj.Parent = SoundService
+                musicObj:Play()
+            end
+        else
+            if musicObj then musicObj:Destroy() musicObj = nil end
+        end
+
+        if state.laughLoop and tick % 20 == 0 then playMeme() end
+
+        if state.screenShake then
+            local cam = workspace.CurrentCamera
+            if cam then
+                cam.CFrame = cam.CFrame * CFrame.new(math.random(-1,1)/10, math.random(-1,1)/10, 0)
+            end
+        end
+
+        if state.rainbowScreen then
+            game.Lighting.Ambient = Color3.fromHSV(math.random(),1,1)
+        end
+
+        if state.followPlayer and hrp then
+            local closest, dist = nil, math.huge
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local d = (p.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    if d < dist then dist = d; closest = p.Character.HumanoidRootPart end
+                end
+            end
+            if closest and dist < 50 then
+                hrp.CFrame = CFrame.new(hrp.Position, closest.Position)
+            end
+        end
+
+        if state.spinOthers then
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local r = p.Character.HumanoidRootPart
+                    r.CFrame = r.CFrame * CFrame.Angles(0,math.rad(5),0)
+                end
+            end
+        end
+    end
+end)
+
+print("[WindUI Troll] Loaded! Background: rbxassetid://108973833381448")
